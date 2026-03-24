@@ -13,6 +13,7 @@
       color: #1a1a1a;
       width: 100%;
       overflow-x: hidden;
+      font-size: 16px;
     }
 
     :root {
@@ -29,15 +30,15 @@
     }
 
     /* ══════════════════════════════
-       SECTION TITLE — small blue pill + white text
+       SECTION TITLE
     ══════════════════════════════ */
     .section-title {
       display: inline-block;
       background: var(--wmo-blue);
       color: var(--white);
-      font-size: 0.82em;
+      font-size: 0.75em;
       font-weight: 700;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       padding: 5px 14px;
       border-radius: 4px;
@@ -86,42 +87,42 @@
     .caption-inner {
       width: 100%;
       background: rgba(255,255,255,0.95);
-      padding: 10px 18px 13px;
+      padding: 12px 20px 15px;
     }
 
     .caption-tag {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      font-size: 0.68em;
+      gap: 6px;
+      font-size: 0.8em;
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--text-sub);
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
     .caption-tag::before {
       content: '';
       display: inline-block;
-      width: 8px; height: 8px;
+      width: 9px; height: 9px;
       border-radius: 50%;
       background: var(--blue-dot);
     }
 
     .caption-title {
-      font-size: 0.92em;
+      font-size: 1.05em;
       font-weight: 700;
       color: var(--text-main);
-      line-height: 1.3;
+      line-height: 1.35;
     }
     .caption-title a { color: inherit; text-decoration: none; }
     .caption-title a:hover { color: var(--wmo-blue); text-decoration: underline; }
 
     .caption-desc {
-      font-size: 0.75em;
+      font-size: 0.88em;
       color: var(--text-sub);
-      line-height: 1.45;
-      margin-top: 4px;
+      line-height: 1.5;
+      margin-top: 5px;
     }
 
     .carousel-btn {
@@ -131,9 +132,9 @@
       background: rgba(255,255,255,0.85);
       color: var(--text-main);
       border: 1px solid var(--grey-border);
-      width: 34px; height: 34px;
+      width: 36px; height: 36px;
       border-radius: 50%;
-      font-size: 1.05em;
+      font-size: 1.1em;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -148,7 +149,7 @@
 
     .carousel-dots {
       position: absolute;
-      bottom: 72px;
+      bottom: 80px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -175,7 +176,7 @@
       justify-content: center;
       background: var(--grey-bg);
       color: var(--text-sub);
-      font-size: 0.85em;
+      font-size: 1em;
       border-radius: var(--radius-card);
       border: 1px solid var(--grey-border);
     }
@@ -194,8 +195,8 @@
     .meeting-item {
       display: flex;
       align-items: flex-start;
-      gap: 10px;
-      padding: 12px 16px;
+      gap: 12px;
+      padding: 14px 18px;
       border-bottom: 1px solid var(--grey-border);
       transition: background 0.15s;
     }
@@ -205,10 +206,10 @@
     .meeting-tag {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      font-size: 0.68em;
+      gap: 6px;
+      font-size: 0.78em;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
       color: var(--text-sub);
       white-space: nowrap;
@@ -218,7 +219,7 @@
     .meeting-tag::before {
       content: '';
       display: inline-block;
-      width: 8px; height: 8px;
+      width: 9px; height: 9px;
       border-radius: 50%;
       flex-shrink: 0;
     }
@@ -227,42 +228,42 @@
 
     .meeting-body  { flex: 1; min-width: 0; }
     .meeting-desc {
-      font-size: 0.88em;
+      font-size: 1em;
       color: var(--text-main);
       font-weight: 600;
-      line-height: 1.35;
+      line-height: 1.4;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .meeting-desc a { color: inherit; text-decoration: none; }
     .meeting-desc a:hover { color: var(--wmo-blue); text-decoration: underline; }
     .meeting-meta {
-      font-size: 0.74em;
+      font-size: 0.85em;
       color: var(--text-sub);
-      margin-top: 3px;
+      margin-top: 4px;
     }
 
     .show-more-btn {
       display: block; width: 100%;
       background: var(--grey-bg); border: none;
       border-top: 1px solid var(--grey-border);
-      color: var(--wmo-blue); font-size: 0.82em; font-weight: 600;
-      padding: 10px; cursor: pointer; text-align: center;
+      color: var(--wmo-blue); font-size: 0.9em; font-weight: 600;
+      padding: 12px; cursor: pointer; text-align: center;
       transition: background 0.15s;
       border-radius: 0 0 var(--radius-card) var(--radius-card);
     }
     .show-more-btn:hover { background: #eef3fa; }
 
     .empty-state {
-      padding: 20px 16px; text-align: center;
-      color: var(--text-sub); font-size: 0.85em; font-style: italic;
+      padding: 22px 18px; text-align: center;
+      color: var(--text-sub); font-size: 0.95em; font-style: italic;
     }
 
     @media (max-width: 540px) {
       .carousel-track, .carousel-slide img, .carousel-loading { height: 220px; }
-      .caption-inner { padding: 7px 12px 9px; }
-      .caption-title { font-size: 0.82em; }
+      .caption-inner { padding: 8px 14px 11px; }
+      .caption-title { font-size: 0.95em; }
       .caption-desc  { display: none; }
-      .carousel-dots { bottom: 58px; }
+      .carousel-dots { bottom: 62px; }
     }
   </style>
 </head>
