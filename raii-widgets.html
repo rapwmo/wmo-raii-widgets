@@ -7,10 +7,12 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
+    html, body {
       font-family: 'Segoe UI', Arial, sans-serif;
       background: transparent;
       color: #222;
+      width: 100%;
+      overflow-x: hidden;
     }
 
     :root {
@@ -59,19 +61,27 @@
       display: block;
     }
 
-    /* Caption overlay */
+    /* Caption — full width, sits at bottom */
     .carousel-caption {
       position: absolute;
       bottom: 0; left: 0; right: 0;
-      padding: 16px 20px 20px;
-      background: linear-gradient(transparent, rgba(0,0,0,0.65));
+      padding: 0;
     }
 
     .caption-inner {
-      background: rgba(255,255,255,0.92);
-      border-radius: 6px;
-      padding: 12px 16px;
-      max-width: 640px;
+      /* stretch fully across the slide */
+      width: 100%;
+      background: rgba(255,255,255,0.88);
+      padding: 12px 20px 14px;
+      backdrop-filter: blur(4px);
+    }
+
+    .caption-top {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 5px;
     }
 
     .caption-tag {
@@ -84,7 +94,7 @@
       text-transform: uppercase;
       padding: 3px 10px;
       border-radius: 3px;
-      margin-bottom: 7px;
+      flex-shrink: 0;
     }
 
     .caption-title {
@@ -92,12 +102,8 @@
       font-weight: 700;
       color: var(--wmo-blue);
       line-height: 1.35;
-      margin-bottom: 5px;
     }
-    .caption-title a {
-      color: inherit;
-      text-decoration: none;
-    }
+    .caption-title a { color: inherit; text-decoration: none; }
     .caption-title a:hover { text-decoration: underline; }
 
     .caption-desc {
@@ -112,13 +118,12 @@
     /* Prev / Next buttons */
     .carousel-btn {
       position: absolute;
-      top: 50%;
+      top: 42%;
       transform: translateY(-50%);
       background: rgba(0,0,0,0.45);
       color: var(--white);
       border: none;
-      width: 38px;
-      height: 38px;
+      width: 38px; height: 38px;
       border-radius: 50%;
       font-size: 1.1em;
       cursor: pointer;
@@ -135,7 +140,7 @@
     /* Dots */
     .carousel-dots {
       position: absolute;
-      bottom: 8px;
+      bottom: 70px;   /* sits above the caption bar */
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -145,7 +150,7 @@
     .carousel-dot {
       width: 9px; height: 9px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.6);
       cursor: pointer;
       transition: background 0.2s, transform 0.2s;
       border: none;
@@ -155,7 +160,7 @@
       transform: scale(1.25);
     }
 
-    /* Loading skeleton */
+    /* Loading */
     .carousel-loading {
       height: 420px;
       display: flex;
@@ -169,7 +174,7 @@
     }
 
     /* ══════════════════════════════
-       SECTION HEADER (shared)
+       SECTION HEADER
     ══════════════════════════════ */
     .section-header {
       display: flex;
@@ -228,8 +233,7 @@
       letter-spacing: 0.04em; margin-bottom: 2px;
     }
     .meeting-desc {
-      font-size: 0.85em; color: var(--text-main);
-      font-weight: 500;
+      font-size: 0.85em; color: var(--text-main); font-weight: 500;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .meeting-desc a { color: inherit; text-decoration: none; }
@@ -251,11 +255,13 @@
       color: var(--text-sub); font-size: 0.85em; font-style: italic;
     }
 
+    /* ── Responsive ── */
     @media (max-width: 540px) {
-      .carousel-track, .carousel-slide img, .carousel-loading { height: 240px; }
-      .caption-inner { padding: 8px 12px; }
+      .carousel-track, .carousel-slide img, .carousel-loading { height: 260px; }
+      .caption-inner { padding: 8px 14px 10px; }
       .caption-title { font-size: 0.85em; }
       .caption-desc  { display: none; }
+      .carousel-dots { bottom: 55px; }
     }
   </style>
 </head>
@@ -263,7 +269,6 @@
 
   <!-- ══ IMAGE CAROUSEL ══ -->
   <div id="carouselLoading" class="carousel-loading">⏳ Loading highlights…</div>
-
   <div class="carousel-block" id="carouselBlock" style="display:none;">
     <div class="carousel-track" id="carouselTrack"></div>
     <button class="carousel-btn prev" id="prevBtn">&#8249;</button>
@@ -282,7 +287,17 @@
   </div>
 
 <script>
-/* ─── CSV parser ─── */
+/* ── Auto-height: notify parent iFrame ── */
+function notifyHeight() {
+  const h = document.body.scrollHeight;
+  window.parent.postMessage({ iframeHeight: h }, '*');
+  if (window.parentIFrame) window.parentIFrame.size(h);
+}
+const ro = new ResizeObserver(() => notifyHeight());
+ro.observe(document.body);
+window.addEventListener('load', notifyHeight);
+
+/* ── CSV parser ── */
 function parseCSV(text) {
   const rows = []; let row = [], cell = '', inQ = false;
   for (let i = 0; i < text.length; i++) {
@@ -299,11 +314,8 @@ function parseCSV(text) {
   return rows;
 }
 
-/* ─────────────────────────────────────────
-   IMAGE CAROUSEL
-───────────────────────────────────────── */
+/* ── CAROUSEL ── */
 const CAROUSEL_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ0cF4IEKQKzC02cwlUM9y39FQ-zN6DldydRQGsFADKSbm_cVbN3K4Q-Ys4Nvuo7-u3wKUuJ7jeKOQ0/pub?gid=215469679&single=true&output=csv';
-
 let currentSlide = 0, totalSlides = 0, autoTimer = null;
 
 async function loadCarousel() {
@@ -312,26 +324,19 @@ async function loadCarousel() {
     const text = await res.text();
     const rows = parseCSV(text);
     const headers = rows[0];
-
     const slides = rows.slice(1).filter(row => {
-      const d = {};
-      headers.forEach((h,i) => d[h.trim()] = row[i]?.trim()||'');
+      const d = {}; headers.forEach((h,i) => d[h.trim()] = row[i]?.trim()||'');
       return d.Related?.includes('II') && d.page?.includes('Home');
     }).map(row => {
-      const d = {};
-      headers.forEach((h,i) => d[h.trim()] = row[i]?.trim()||'');
-      return {
-        image: d.Image || '',
-        title: d.Title || '',
-        link:  d.Link  || '#',
-        desc:  d['Description (for homepage content)'] || ''
-      };
+      const d = {}; headers.forEach((h,i) => d[h.trim()] = row[i]?.trim()||'');
+      return { image: d.Image||'', title: d.Title||'', link: d.Link||'#',
+               desc: d['Description (for homepage content)']||'' };
     });
-
     if (!slides.length) throw new Error('no slides');
     buildCarousel(slides);
   } catch(e) {
     document.getElementById('carouselLoading').textContent = 'Could not load highlights.';
+    notifyHeight();
   }
 }
 
@@ -345,8 +350,10 @@ function buildCarousel(slides) {
       <img src="${s.image}" alt="${s.title}" loading="${i===0?'eager':'lazy'}">
       <div class="carousel-caption">
         <div class="caption-inner">
-          <span class="caption-tag">Highlight</span>
-          <div class="caption-title"><a href="${s.link}" target="_blank">${s.title}</a></div>
+          <div class="caption-top">
+            <span class="caption-tag">Highlight</span>
+            <div class="caption-title"><a href="${s.link}" target="_blank">${s.title}</a></div>
+          </div>
           ${s.desc ? `<div class="caption-desc">${s.desc}</div>` : ''}
         </div>
       </div>
@@ -357,34 +364,32 @@ function buildCarousel(slides) {
   ).join('');
 
   dots.querySelectorAll('.carousel-dot').forEach(btn =>
-    btn.addEventListener('click', () => goTo(+btn.dataset.i))
-  );
-
-  document.getElementById('prevBtn').addEventListener('click', () => goTo((currentSlide - 1 + totalSlides) % totalSlides));
-  document.getElementById('nextBtn').addEventListener('click', () => goTo((currentSlide + 1) % totalSlides));
+    btn.addEventListener('click', () => goTo(+btn.dataset.i)));
+  document.getElementById('prevBtn').addEventListener('click',
+    () => goTo((currentSlide - 1 + totalSlides) % totalSlides));
+  document.getElementById('nextBtn').addEventListener('click',
+    () => goTo((currentSlide + 1) % totalSlides));
 
   document.getElementById('carouselLoading').style.display = 'none';
   document.getElementById('carouselBlock').style.display   = 'block';
-
+  document.querySelectorAll('.carousel-slide img').forEach(img =>
+    img.addEventListener('load', notifyHeight));
+  notifyHeight();
   startAuto();
 }
 
 function goTo(idx) {
   currentSlide = idx;
-  document.getElementById('carouselTrack').style.transform = `translateX(-${idx * 100}%)`;
+  document.getElementById('carouselTrack').style.transform = `translateX(-${idx*100}%)`;
   document.querySelectorAll('.carousel-dot').forEach((d,i) =>
-    d.classList.toggle('active', i===idx)
-  );
+    d.classList.toggle('active', i===idx));
 }
-
 function startAuto() {
   clearInterval(autoTimer);
-  autoTimer = setInterval(() => goTo((currentSlide + 1) % totalSlides), 5000);
+  autoTimer = setInterval(() => goTo((currentSlide+1) % totalSlides), 5000);
 }
 
-/* ─────────────────────────────────────────
-   MEETINGS
-───────────────────────────────────────── */
+/* ── MEETINGS ── */
 const MEETINGS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ0cF4IEKQKzC02cwlUM9y39FQ-zN6DldydRQGsFADKSbm_cVbN3K4Q-Ys4Nvuo7-u3wKUuJ7jeKOQ0/pub?gid=0&single=true&output=csv';
 const SHOW_INIT = 3;
 const MONTH_MAP = {january:0,february:1,march:2,april:3,may:4,june:5,july:6,august:7,september:8,october:9,november:10,december:11};
@@ -401,17 +406,10 @@ async function loadMeetings() {
     const res  = await fetch(MEETINGS_CSV);
     const text = await res.text();
     const rows = parseCSV(text);
-
     const meetings = rows.slice(1)
       .filter(r => r[0] && (r[0].trim()==='RA II'||r[0].trim()==='RA II & RA V') && !r[2]?.trim())
-      .map(r => ({
-        type:    r[1]||'',
-        desc:    r[3]||'',
-        link:    r[4]||'',
-        venue:   r[5]||'',
-        date:    r[6]||'',
-        checker: (r[7]||'').toLowerCase()
-      }))
+      .map(r => ({ type:r[1]||'', desc:r[3]||'', link:r[4]||'',
+                   venue:r[5]||'', date:r[6]||'', checker:(r[7]||'').toLowerCase() }))
       .filter(m => m.checker==='today'||m.checker==='upcoming')
       .sort((a,b) => {
         if(a.checker==='today'&&b.checker!=='today') return -1;
@@ -419,25 +417,24 @@ async function loadMeetings() {
         const da=parseDate(a.date), db=parseDate(b.date);
         return da&&db ? da-db : 0;
       });
-
     window._allMeetings = meetings;
     renderMeetings(false);
   } catch(e) {
     document.getElementById('meetingsList').innerHTML =
       '<div class="empty-state">Could not load meetings data.</div>';
+    notifyHeight();
   }
 }
 
 function renderMeetings(showAll) {
   const meetings = window._allMeetings || [];
-  const list     = document.getElementById('meetingsList');
+  const list = document.getElementById('meetingsList');
   if (!meetings.length) {
     list.innerHTML = '<div class="empty-state">No upcoming meetings at this time.</div>';
-    return;
+    notifyHeight(); return;
   }
   const visible   = showAll ? meetings : meetings.slice(0, SHOW_INIT);
   const moreCount = meetings.length - SHOW_INIT;
-
   list.innerHTML = visible.map(m => `
     <div class="meeting-item">
       <span class="meeting-tag ${m.checker==='today'?'tag-happening':'tag-upcoming'}">
@@ -452,9 +449,9 @@ function renderMeetings(showAll) {
     + (!showAll && moreCount > 0
        ? `<button class="show-more-btn" onclick="renderMeetings(true)">▼ Show ${moreCount} more meeting${moreCount>1?'s':''}</button>`
        : '');
+  notifyHeight();
 }
 
-/* ─── Init ─── */
 loadCarousel();
 loadMeetings();
 </script>
