@@ -12,7 +12,7 @@
       background: transparent;
       color: #1a1a1a;
       width: 100%;
-      overflow-x: hidden;
+      overflow: hidden;
       font-size: 19px;
     }
 
@@ -112,7 +112,7 @@
     .show-more-btn:hover { background: #eef3fa; }
 
     .empty-state {
-      padding: 20px 18px; text-align: center;
+      padding: 16px 18px; text-align: center;
       color: var(--text-sub); font-size: 0.95em; font-style: italic;
     }
   </style>
@@ -127,13 +127,14 @@
   </div>
 
 <script>
-function notifyHeight(){
-  const h = document.documentElement.scrollHeight;
+/* 关键：内容加载完后立刻把 body 高度设成内容实际高度，
+   这样 Custom iFrame 读到的页面高度就是内容高度，不会有空白 */
+function fitHeight(){
+  const h = document.body.scrollHeight;
+  document.documentElement.style.height = h + 'px';
   window.parent.postMessage({ iframeHeight: h }, '*');
   if(window.parentIFrame) window.parentIFrame.size(h);
 }
-new ResizeObserver(notifyHeight).observe(document.body);
-window.addEventListener('load', notifyHeight);
 
 function parseCSV(text){
   const rows=[];let row=[],cell='',inQ=false;
@@ -180,7 +181,7 @@ async function loadMeetings(){
     renderMeetings(false);
   }catch(e){
     document.getElementById('meetingsList').innerHTML='<div class="empty-state">Could not load meetings.</div>';
-    notifyHeight();
+    fitHeight();
   }
 }
 
@@ -189,7 +190,7 @@ function renderMeetings(all){
   const list=document.getElementById('meetingsList');
   if(!meetings.length){
     list.innerHTML='<div class="empty-state">No upcoming meetings at this time.</div>';
-    notifyHeight();return;
+    fitHeight();return;
   }
   const vis=all?meetings:meetings.slice(0,SHOW_INIT);
   const more=meetings.length-SHOW_INIT;
@@ -204,7 +205,7 @@ function renderMeetings(all){
       </div>
     </div>`).join('')
     +(!all&&more>0?`<button class="show-more-btn" onclick="renderMeetings(true)">View ${more} more meeting${more>1?'s':''}</button>`:'');
-  notifyHeight();
+  fitHeight();
 }
 
 loadMeetings();
