@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RA II – Meetings</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: transparent;
+      color: #1a1a1a;
+      width: 100%;
+      overflow-x: hidden;
+      font-size: 19px;
+    }
+
+    :root {
+      --wmo-blue:    #1a4f8a;
+      --blue-dot:    #3b82c4;
+      --white:       #ffffff;
+      --grey-bg:     #f7f8fa;
+      --grey-border: #e5e7eb;
+      --text-main:   #111827;
+      --text-sub:    #6b7280;
+      --radius-card: 12px;
+      --shadow-card: 0 1px 6px rgba(0,0,0,0.08);
+      --orange:      #e8820c;
+    }
+
+    .section-title {
+      display: inline-block;
+      background: var(--wmo-blue);
+      color: var(--white);
+      font-size: 0.78em;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    .meetings-card {
+      background: var(--white);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--grey-border);
+      overflow: hidden;
+    }
+
+    .meeting-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--grey-border);
+      transition: background 0.15s;
+    }
+    .meeting-item:last-child { border-bottom: none; }
+    .meeting-item:hover { background: var(--grey-bg); }
+
+    .meeting-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72em;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+    .meeting-tag::before {
+      content: '';
+      display: inline-block;
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .tag-happening::before { background: var(--orange); }
+    .tag-upcoming::before  { background: var(--blue-dot); }
+
+    .meeting-body { flex: 1; min-width: 0; }
+    .meeting-desc {
+      font-size: 1.0em;
+      color: var(--text-main);
+      font-weight: 600;
+      line-height: 1.4;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .meeting-desc a { color: inherit; text-decoration: none; }
+    .meeting-desc a:hover { color: var(--wmo-blue); text-decoration: underline; }
+    .meeting-meta {
+      font-size: 0.82em;
+      color: var(--text-sub);
+      margin-top: 3px;
+    }
+
+    .show-more-btn {
+      display: block; width: 100%;
+      background: var(--grey-bg); border: none;
+      border-top: 1px solid var(--grey-border);
+      color: var(--wmo-blue); font-size: 0.9em; font-weight: 600;
+      padding: 12px; cursor: pointer; text-align: center;
+      transition: background 0.15s;
+      border-radius: 0 0 var(--radius-card) var(--radius-card);
+    }
+    .show-more-btn:hover { background: #eef3fa; }
+
+    .empty-state {
+      padding: 20px 18px; text-align: center;
+      color: var(--text-sub); font-size: 0.95em; font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="section-title">Upcoming Meetings &amp; Events</div>
+  <div class="meetings-card">
+    <div id="meetingsList">
+      <div class="empty-state">Loading meetings…</div>
+    </div>
+  </div>
+
+<script>
+function notifyHeight(){
+  const h = document.documentElement.scrollHeight;
+  window.parent.postMessage({ iframeHeight: h }, '*');
+  if(window.parentIFrame) window.parentIFrame.size(h);
+}
+new ResizeObserver(notifyHeight).observe(document.body);
+window.addEventListener('load', notifyHeight);
+
+function parseCSV(text){
+  const rows=[];let row=[],cell='',inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i],n=text[i+1];
+    if(c==='"'){inQ&&n==='"'?(cell+='"',i++):(inQ=!inQ);}
+    else if(c===','&&!inQ){row.push(cell.trim());cell='';}
+    else if((c==='\n'||c==='\r')&&!inQ){
+      if(cell.trim())row.push(cell.trim());
+      if(row.length)rows.push(row);row=[];cell='';
+    }else{cell+=c;}
+  }
+  if(cell.trim())row.push(cell.trim());
+  if(row.length)rows.push(row);
+  return rows;
+}
+
+const MEETINGS_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vQ0cF4IEKQKzC02cwlUM9y39FQ-zN6DldydRQGsFADKSbm_cVbN3K4Q-Ys4Nvuo7-u3wKUuJ7jeKOQ0/pub?gid=0&single=true&output=csv';
+const SHOW_INIT=3;
+const MM={january:0,february:1,march:2,april:3,may:4,june:5,july:6,august:7,september:8,october:9,november:10,december:11};
+
+function parseDate(s){
+  const m=s.match(/(\d+)(?:-\d+)?\s+([A-Za-z]+)\s+(\d{4})/);
+  if(!m)return null;
+  const mo=MM[m[2].toLowerCase()];
+  return mo!==undefined?new Date(+m[3],mo,+m[1]):null;
+}
+
+async function loadMeetings(){
+  try{
+    const rows=parseCSV(await(await fetch(MEETINGS_CSV)).text());
+    const meetings=rows.slice(1)
+      .filter(r=>r[0]&&(r[0].trim()==='RA II'||r[0].trim()==='RA II & RA V')&&!r[2]?.trim())
+      .map(r=>({type:r[1]||'',desc:r[3]||'',link:r[4]||'',
+                venue:r[5]||'',date:r[6]||'',checker:(r[7]||'').toLowerCase()}))
+      .filter(m=>m.checker==='today'||m.checker==='upcoming')
+      .sort((a,b)=>{
+        if(a.checker==='today'&&b.checker!=='today')return -1;
+        if(a.checker!=='today'&&b.checker==='today')return 1;
+        const da=parseDate(a.date),db=parseDate(b.date);
+        return da&&db?da-db:0;
+      });
+    window._meetings=meetings;
+    renderMeetings(false);
+  }catch(e){
+    document.getElementById('meetingsList').innerHTML='<div class="empty-state">Could not load meetings.</div>';
+    notifyHeight();
+  }
+}
+
+function renderMeetings(all){
+  const meetings=window._meetings||[];
+  const list=document.getElementById('meetingsList');
+  if(!meetings.length){
+    list.innerHTML='<div class="empty-state">No upcoming meetings at this time.</div>';
+    notifyHeight();return;
+  }
+  const vis=all?meetings:meetings.slice(0,SHOW_INIT);
+  const more=meetings.length-SHOW_INIT;
+  list.innerHTML=vis.map(m=>`
+    <div class="meeting-item">
+      <span class="meeting-tag ${m.checker==='today'?'tag-happening':'tag-upcoming'}">
+        ${m.checker==='today'?'Happening':'Upcoming'}
+      </span>
+      <div class="meeting-body">
+        <div class="meeting-desc">${m.link?`<a href="${m.link}" target="_blank">${m.desc}</a>`:m.desc}</div>
+        <div class="meeting-meta">${m.type}${m.venue?' &nbsp;·&nbsp; '+m.venue:''} &nbsp;·&nbsp; ${m.date}</div>
+      </div>
+    </div>`).join('')
+    +(!all&&more>0?`<button class="show-more-btn" onclick="renderMeetings(true)">View ${more} more meeting${more>1?'s':''}</button>`:'');
+  notifyHeight();
+}
+
+loadMeetings();
+</script>
+</body>
+</html>
